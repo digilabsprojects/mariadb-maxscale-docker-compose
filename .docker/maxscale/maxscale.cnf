@@ -27,6 +27,7 @@ servers=master, slave1
 user=${MARIADB_MONITOR_USER}
 password=${MARIADB_MONITOR_PASSWORD}
 monitor_interval=2000ms
+enforce_read_only_slaves=1
 
 # Service definitions for read/write splitting and read-only services.
 [Splitter-Service]
