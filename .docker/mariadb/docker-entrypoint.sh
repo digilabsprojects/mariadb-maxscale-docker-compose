@@ -1,13 +1,7 @@
 #!/bin/bash
 
-if [ -d /docker-entrypoint-initdb.d/tmp ]; then
-  if [ -z "$MARIADB_MASTER_HOST" ]; then
-    envsubst < /docker-entrypoint-initdb.d/tmp/master-init.sql > /docker-entrypoint-initdb.d/master-init.sql
-  fi
-
-  if [ -n "$MARIADB_MASTER_HOST" ]; then
-    envsubst < /docker-entrypoint-initdb.d/tmp/slave-init.sql > /docker-entrypoint-initdb.d/slave-init.sql
-  fi
+if [ -d /docker-entrypoint-initdb.d/tmp ] && [ -z "$MARIADB_MASTER_HOST" ]; then
+  envsubst < /docker-entrypoint-initdb.d/tmp/init.sql > /docker-entrypoint-initdb.d/init.sql
 fi
 
 rm -rf /docker-entrypoint-initdb.d/tmp

@@ -1,3 +1,0 @@
-[mariadb]
-log-bin
-log-basename=my-mariadb
