@@ -1,0 +1,86 @@
+version: '3.9'
+
+services:
+  db-proxy:
+    image: digilabs/mariadb/maxscale:24.02
+    build:
+      context: .
+      dockerfile: .docker/maxscale/Dockerfile
+    container_name: db-proxy
+    restart: always
+    environment:
+      MARIADB_MASTER_HOST: ${DB_MASTER_HOST:-db-master}
+      MARIADB_SLAVE_HOST: ${DB_SLAVE_HOST:-db-slave}
+      MARIADB_MONITOR_USER: ${DB_MONITOR_USER:-monitoring}
+      MARIADB_MONITOR_PASSWORD: ${DB_MONITOR_PASSWORD:-monitoring}
+      MARIADB_MAXSCALE_USER: ${DB_MAXSCALE_USER:-maxscale}
+      MARIADB_MAXSCALE_PASSWORD: ${DB_MAXSCALE_PASSWORD:-maxscale}
+    ports:
+      - "8989:8989"
+      - "${DB_PORT:-3306}:3306"
+    depends_on:
+      - db-master
+      - db-slave
+    networks:
+      - mariadb_maxscale
+  
+  db-master:
+    image: digilabs/mariadb:10.11.5
+    build:
+      context: .
+      dockerfile: .docker/mariadb/Dockerfile
+    command:
+      - '--server_id=1'
+    container_name: db-master
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-digilabs}
+      MARIADB_INITDB_SKIP_TZINFO: 'Y'
+      MARIADB_USER: ${DB_USER:-digilabs}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-digilabs}
+      MARIADB_DATABASE: ${DB_DATABASE:-digilabs}
+      MARIADB_MONITOR_USER: ${DB_MONITOR_USER:-monitoring}
+      MARIADB_MONITOR_PASSWORD: ${DB_MONITOR_PASSWORD:-monitoring}
+      MARIADB_MAXSCALE_USER: ${DB_MAXSCALE_USER:-maxscale}
+      MARIADB_MAXSCALE_PASSWORD: ${DB_MAXSCALE_PASSWORD:-maxscale}
+      MARIADB_REPLICATION_USER: ${DB_REPLICATION_USER:-replication}
+      MARIADB_REPLICATION_PASSWORD: ${DB_REPLICATION_PASSWORD:-replication}
+    volumes:
+      - .docker/mariadb/master.cnf:/etc/mysql/conf.d/master.cnf
+      - db_data:/var/lib/mysql
+    networks:
+      - mariadb_maxscale
+
+  db-slave:
+    image: digilabs/mariadb:10.11.5
+    container_name: db-slave
+    command:
+      - '--server_id=2'
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-digilabs}
+      MARIADB_INITDB_SKIP_TZINFO: 'Y'
+      MARIADB_MASTER_HOST: ${DB_MASTER_HOST:-db-master}
+      MARIADB_MONITOR_USER: ${DB_MONITOR_USER:-monitoring}
+      MARIADB_MONITOR_PASSWORD: ${DB_MONITOR_PASSWORD:-monitoring}
+      MARIADB_MAXSCALE_USER: ${DB_MAXSCALE_USER:-maxscale}
+      MARIADB_MAXSCALE_PASSWORD: ${DB_MAXSCALE_PASSWORD:-maxscale}
+      MARIADB_REPLICATION_USER: ${DB_REPLICATION_USER:-replication}
+      MARIADB_REPLICATION_PASSWORD: ${DB_REPLICATION_PASSWORD:-replication}
+    ports:
+      - "3308:3306"
+    volumes:
+      - .docker/mariadb/slave.cnf:/etc/mysql/conf.d/slave.cnf
+      - db_slave_data:/var/lib/mysql
+    depends_on:
+      - db-master
+    networks:
+      - mariadb_maxscale
+
+volumes:
+  db_data:
+  db_slave_data:
+
+networks:
+  mariadb_maxscale:
+    driver: bridge

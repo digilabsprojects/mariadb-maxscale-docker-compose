@@ -1,0 +1,4 @@
+[mariadb]
+log-basename=my-mariadb
+replicate_do_db=primary_db
+read_only=1

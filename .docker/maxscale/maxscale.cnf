@@ -1,0 +1,43 @@
+[maxscale]
+admin_secure_gui=false
+threads=auto
+
+# this enables external access to the REST API outside of localhost
+# please review / modify for any public / non development environments
+admin_host=0.0.0.0
+
+# Server list
+[master]
+type=server
+address=${MARIADB_MASTER_HOST}
+port=3306
+protocol=MariaDBBackend
+
+[slave1]
+type=server
+address=${MARIADB_SLAVE_HOST}
+port=3306
+protocol=MariaDBBackend
+
+# Monitor for the servers
+[Replication-Monitor]
+type=monitor
+module=mariadbmon
+servers=master, slave1
+user=${MARIADB_MONITOR_USER}
+password=${MARIADB_MONITOR_PASSWORD}
+monitor_interval=2000ms
+
+# Service definitions for read/write splitting and read-only services.
+[Splitter-Service]
+type=service
+router=readwritesplit
+servers=master, slave1
+user=${MARIADB_MAXSCALE_USER}
+password=${MARIADB_MAXSCALE_PASSWORD}
+
+[Splitter-Listener]
+type=listener
+service=Splitter-Service
+protocol=MariaDBClient
+port=3306
